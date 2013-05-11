@@ -3,6 +3,7 @@ package com.hyperring.AntiOverkill.player;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -17,13 +18,23 @@ public class PlayerListener implements Listener {
 	
 	@EventHandler
 	public void onEntityAttack(EntityDamageByEntityEvent event){
-		if (event.getDamager() instanceof Player && event.getEntity() instanceof Player){
-			if (!playerManager.allowPvP(((Player)event.getEntity()).getName(), ((Player)event.getDamager()).getName())){
+		if (event.getEntity() instanceof Player){
+			Player defender = (Player)event.getEntity();
+			Player attacker = null;
+			
+			if (event.getDamager() instanceof Player)
+				attacker = (Player)event.getDamager();
+			else if (event.getDamager() instanceof Projectile){
+				Projectile projectile = (Projectile)event.getDamager();
+				if (projectile.getShooter() instanceof Player)
+					attacker = (Player)projectile.getShooter();
+			}
+			
+			if ( attacker != null && !playerManager.allowPvP(defender.getName(), attacker.getName()) ){
 				event.setCancelled(true);
-				((Player)event.getDamager()).sendMessage(ChatColor.RED + "You have already killed this person three times in the last thirty minutes. Give them a break!");
+				attacker.sendMessage(ChatColor.RED + "You have already killed "+defender.getDisplayName()+ChatColor.RED+" three times in the last thirty minutes. Give them a break!");
 			}
 		}
-		
 	}
 	
 	@EventHandler
@@ -33,4 +44,5 @@ public class PlayerListener implements Listener {
 			playerManager.onPlayerDeath(((Player)entity).getName(), ((Player)entity).getKiller().getName());
 		}
 	}
+
 }
